@@ -1,0 +1,16 @@
+{
+  "model_name": "VoxNet-2D Spectro-Acoustic CNN",
+  "architecture": "4-Block Residual CNN + Squeeze-Excitation + Acoustic Fusion MLP",
+  "test_samples": 400,
+  "accuracy": 100.0,
+  "precision": 100.0,
+  "recall": 100.0,
+  "f1_score": 100.0,
+  "roc_auc": 100.0,
+  "confusion_matrix": {
+    "true_negatives_human": 200,
+    "false_positives_human_flagged_ai": 0,
+    "false_negatives_ai_missed": 0,
+    "true_positives_ai_detected": 200
+  }
+}

@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+.npm/
+frontend/dist/
+dist-ssr/
+*.local
+
+# Temporary Uploads & DB
+backend/uploads/*
+!backend/uploads/.gitkeep
+voxguard.db
+*.sqlite3
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
