@@ -15,7 +15,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 
 from backend.app.core.config import settings
 from backend.app.db.database import init_db
@@ -32,10 +32,14 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS Middleware
+# CORS Middleware (Allows all in production / configured origins)
+cors_origins = settings.CORS_ORIGINS if settings.CORS_ORIGINS else ["*"]
+if "*" not in cors_origins:
+    cors_origins.append("*")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,6 +51,34 @@ app.include_router(api_router, prefix=settings.API_PREFIX)
 # Mount demo audio files directory if it exists
 if settings.DEMO_AUDIO_DIR.exists():
     app.mount("/demo-audio", StaticFiles(directory=str(settings.DEMO_AUDIO_DIR)), name="demo-audio")
+
+# Mount Production Frontend (React build in frontend/dist) if present
+FRONTEND_DIST = PROJECT_ROOT / "frontend" / "dist"
+if FRONTEND_DIST.exists():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="static-assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        # Allow API and docs to pass through
+        if full_path.startswith("api") or full_path.startswith("docs") or full_path.startswith("redoc") or full_path.startswith("demo-audio"):
+            return JSONResponse(status_code=404, content={"detail": "Not Found"})
+        
+        file_path = FRONTEND_DIST / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(FRONTEND_DIST / "index.html")
+
+else:
+    @app.get("/")
+    def root():
+        return {
+            "service": settings.PROJECT_NAME,
+            "tagline": settings.TAGLINE,
+            "version": settings.VERSION,
+            "status": "operational",
+            "docs": "/docs",
+            "api_health": f"{settings.API_PREFIX}/health"
+        }
 
 
 @app.exception_handler(Exception)
@@ -61,19 +93,9 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-@app.get("/")
-def root():
-    return {
-        "service": settings.PROJECT_NAME,
-        "tagline": settings.TAGLINE,
-        "version": settings.VERSION,
-        "status": "operational",
-        "docs": "/docs",
-        "api_health": f"{settings.API_PREFIX}/health"
-    }
-
-
 if __name__ == "__main__":
     import uvicorn
-    print(f"[*] Starting {settings.PROJECT_NAME} Server on http://127.0.0.1:8001 ...")
-    uvicorn.run("backend.main:app", host="127.0.0.1", port=8001, reload=False)
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT", 8001))
+    print(f"[*] Starting {settings.PROJECT_NAME} Server on http://{host}:{port} ...")
+    uvicorn.run("backend.main:app", host=host, port=port, reload=False)

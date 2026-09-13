@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  voxguard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: voxguard-ai:latest
+    container_name: voxguard-ai
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - HOST=0.0.0.0
+      - DEBUG=false
+    volumes:
+      - voxguard_data:/app/backend/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  voxguard_data:
